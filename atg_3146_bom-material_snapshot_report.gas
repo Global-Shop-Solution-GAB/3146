@@ -1,0 +1,474 @@
+Program.Sub.ScreenSU.Start
+gui.SS_Form1..create
+gui.SS_Form1..caption("BOM Material Reprice")
+gui.SS_Form1..size(4135,2440)
+gui.SS_Form1..position(0,0)
+gui.SS_Form1..event(unload,ss_form1_unload)
+gui.SS_Form1..alwaysontop(False)
+gui.SS_Form1..fontname("Arial")
+gui.SS_Form1..fontsize(8)
+gui.SS_Form1..forecolor(0)
+gui.SS_Form1..fontstyle(,,,,)
+gui.SS_Form1..BackColor(-2147483633)
+gui.SS_Form1..controlbox(True)
+gui.SS_Form1..maxbutton(False)
+gui.SS_Form1..minbutton(False)
+gui.SS_Form1..mousepointer(0)
+gui.SS_Form1..moveable(True)
+gui.SS_Form1..sizeable(False)
+gui.SS_Form1..ShowInTaskBar(True)
+gui.SS_Form1..titlebar(True)
+gui.SS_Form1.lbl_dtpStart.create(label,"Starting Date",True,1800,200,1,100,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.dtpStart.create(datepicker)
+gui.SS_Form1.dtpStart.visible(True)
+gui.SS_Form1.dtpStart.size(1800,345)
+gui.SS_Form1.dtpStart.zorder(0)
+gui.SS_Form1.dtpStart.position(100,335)
+gui.SS_Form1.dtpStart.enabled(True)
+gui.SS_Form1.dtpStart.checkbox(False)
+gui.SS_Form1.lbl_dtpEnd.create(label,"Ending Date",True,1800,200,1,1985,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.dtpEnd.create(datepicker)
+gui.SS_Form1.dtpEnd.visible(True)
+gui.SS_Form1.dtpEnd.size(1800,345)
+gui.SS_Form1.dtpEnd.zorder(0)
+gui.SS_Form1.dtpEnd.position(1985,335)
+gui.SS_Form1.dtpEnd.enabled(True)
+gui.SS_Form1.dtpEnd.checkbox(False)
+gui.SS_Form1.lbl_ddlBOM.create(label,"Select Option",True,1800,200,1,100,850,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.ddlBOM.create(dropdownlist)
+gui.SS_Form1.ddlBOM.visible(True)
+gui.SS_Form1.ddlBOM.size(1800,330)
+gui.SS_Form1.ddlBOM.zorder(0)
+gui.SS_Form1.ddlBOM.position(100,1050)
+gui.SS_Form1.ddlBOM.enabled(True)
+gui.SS_Form1.ddlBOM.fontname("Arial")
+gui.SS_Form1.ddlBOM.fontsize(8)
+gui.SS_Form1.cmdPrint.create(button)
+gui.SS_Form1.cmdPrint.caption("Print")
+gui.SS_Form1.cmdPrint.visible(True)
+gui.SS_Form1.cmdPrint.size(1000,360)
+gui.SS_Form1.cmdPrint.zorder(0)
+gui.SS_Form1.cmdPrint.position(100,1465)
+gui.SS_Form1.cmdPrint.enabled(True)
+gui.SS_Form1.cmdPrint.fontname("Arial")
+gui.SS_Form1.cmdPrint.fontsize(8)
+gui.SS_Form1.cmdPrint.event(click,cmdprint_click)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.Global.bChk.Declare(Boolean,True)
+Variable.UDT.uJDBom.Define("Parent",String)
+Variable.uGlobal.uJDBom.Declare("uJDBom")
+Variable.UDT.uBom.Define("Parent",String,"Parent")
+Variable.UDT.uBom.Define("Description",String,"Description")
+Variable.UDT.uBom.Define("Cost1",Float,"Start_Cost")
+Variable.UDT.uBom.Define("Cost2",Float,"End_Cost")
+Variable.UDT.uBom.Define("Change",Float)
+Variable.UDT.uBom.Define("Terminal",String,"Terminal")
+Variable.uGlobal.uBom.Declare("uBom")
+Variable.UDT.uMatl.Define("Terminal",String,"Terminal")
+Variable.UDT.uMatl.Define("BOM",String,"BOM_Group")
+Variable.UDT.uMatl.Define("Parent",String,"Parent")
+Variable.UDT.uMatl.Define("Part",String,"Part")
+Variable.UDT.uMatl.Define("Sort",Long,"Sort")
+Variable.UDT.uMatl.Define("Description",String,"Description")
+Variable.UDT.uMatl.Define("Quantity",Float,"Quantity")
+Variable.UDT.uMatl.Define("Cost1",Float,"Start_Cost")
+Variable.UDT.uMatl.Define("Cost2",Float,"End_Cost")
+Variable.uGlobal.uMatl.Declare("uMatl")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: mla
+'Project Start Date: 8/29/2011
+'Notes:
+'  Weisgram
+
+F.ODBC.Connection!con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+Gui.SS_Form1.dtpStart.CustomFormat("MMM yyy")
+Gui.SS_Form1.dtpEnd.CustomFormat("MMM yyy")
+Gui.SS_Form1.ddlBOM.AddItem("Material",0)
+Gui.SS_Form1.ddlBOM.AddItem("Bill of Material",1)
+Gui.SS_Form1.ddlBOM.Text("Material")
+Gui.SS_Form1..Show
+
+Program.Sub.Main.End
+
+program.sub.ss_form1_unload.start
+F.ODBC.Connection!con.Close
+F.Intrinsic.Control.End
+
+program.sub.ss_form1_unload.end
+
+program.sub.cmdprint_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdprint_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.i.Declare(Long)
+V.Local.sFilePath.Declare(String)
+V.Local.sFile.Declare(String)
+V.Local.sBomFile.Declare(String)
+V.Local.sBomLine.Declare(String)
+V.Local.ia.Declare(Long)
+V.Local.sBom.Declare(String)
+V.Local.sBomDesc.Declare(String)
+V.Local.iMonth.Declare(Long)
+V.Local.iYear.Declare(Long)
+V.Local.iUB.Declare(Long)
+V.Local.sSql.Declare(String)
+V.Local.iChkMonth.Declare(Long)
+V.Local.iChkYear.Declare(Long)
+V.Local.bChk.Declare(Boolean)
+
+F.Intrinsic.Date.Month(V.Ambient.Date,V.Local.iChkMonth)
+F.Intrinsic.Date.Year(V.Ambient.Date,V.Local.iChkYear)
+V.Local.bChk.Set(True)
+V.uGlobal.uBom.Redim(-1,-1)
+V.uGlobal.uMatl.Redim(-1,-1)
+V.Local.iUB.Set(-1)
+F.Intrinsic.Control.CallSub(Chk)
+F.Intrinsic.Control.If(V.Global.bChk,=,True)
+	F.Intrinsic.Control.CallSub(Loadjdbom)
+	F.Intrinsic.String.Concat(V.System.Temp,"\GSS\BOM",V.Caller.Terminal,".txt",V.Local.sFilePath)
+	F.Intrinsic.Control.For(V.Local.i,V.uGlobal.uJDBom.LBound,V.uGlobal.uJDBom.UBound,1)
+		F.Intrinsic.String.Concat("0",V.Ambient.Tab,V.uGlobal.uJDBom(V.Local.i)!Parent,V.Ambient.Tab,V.Local.sFilePath,V.Local.sFile)
+		F.Intrinsic.File.String2File(V.Local.sFilePath,V.Local.sFile)
+		F.Global.General.CallWrapperSync(410000,V.Local.sFilePath)
+		V.Local.sBomFile.Redim(0,0)
+		F.Intrinsic.File.File2String(V.Local.sFilePath,V.Local.sBomFile)
+		F.Intrinsic.String.Split(V.Local.sBomFile,V.Ambient.NewLine,V.Local.sBomFile)
+		F.Intrinsic.Control.For(V.Local.ia,V.Local.sBomFile.LBound,V.Local.sBomFile.UBound,1)
+			V.Local.sBomLine.Redim(0,0)
+			F.Intrinsic.String.Split(V.Local.sBomLine,"|~|",V.Local.sBomLine)
+			F.Intrinsic.Control.If(V.Screen.SS_Form1!ddlBOM.ListIndex,=,0)
+				F.Intrinsic.Control.If(V.Local.ia,=,7)
+					V.Local.sBom.Set(V.Local.sBomLine(2).Trim)
+				F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.If(V.Local.ia,>,7)
+					F.Intrinsic.String.Concat("Select COST from V_BOM_MSTR where PARENT = '",V.Local.sBomLine(12).Trim,"' and PART = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+					F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSql)
+					F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+						'Getting Starting month cost
+						F.Intrinsic.Date.Month(V.Screen.SS_Form1!dtpStart.Value,V.Local.iMonth)
+						F.Intrinsic.Date.Year(V.Screen.SS_Form1!dtpStart.Value,V.Local.iYear)
+						F.Intrinsic.Control.If(V.Local.iMonth,=,V.Local.iChkMonth)
+							F.Intrinsic.Control.If(V.Local.iYear,=,V.Local.iChkYear)
+								V.Local.bChk.Set(True)
+							F.Intrinsic.Control.Else
+								V.Local.bChk.Set(False)
+							F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.Else
+							V.Local.bChk.Set(False)
+						F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.If(V.Local.bChk,=,True)
+							F.Intrinsic.Control.If(V.uGlobal.uMatl.UBound,=,-1)
+								V.uGlobal.uMatl.Redim(0,0)
+							F.Intrinsic.Control.EndIf
+							F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+							V.uGlobal.uMatl.RedimPreserve(V.uGlobal.uMatl.LBound,V.Local.iUB)
+							V.uGlobal.uMatl(V.Local.iUB)!Terminal.Set(V.Caller.Terminal)
+							V.uGlobal.uMatl(V.Local.iUB)!BOM.Set(V.Local.sBom)
+							V.uGlobal.uMatl(V.Local.iUB)!Parent.Set(V.Local.sBomLine(12).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Part.Set(V.Local.sBomLine(2).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Parent.Set(V.Local.sBomLine(12).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Sort.Set(V.Local.sBomLine(0).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Description.Set(V.Local.sBomLine(3).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Quantity.Set(V.Local.sBomLine(6))
+							V.uGlobal.uMatl(V.Local.iUB)!Cost1.Set(V.ODBC.con!rst.FieldValFloat!COST)
+						F.Intrinsic.Control.Else
+							F.Intrinsic.Control.If(V.uGlobal.uMatl.UBound,=,-1)
+								V.uGlobal.uMatl.Redim(0,0)
+							F.Intrinsic.Control.EndIf
+							F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+							V.uGlobal.uMatl.RedimPreserve(V.uGlobal.uMatl.LBound,V.Local.iUB)
+							V.uGlobal.uMatl(V.Local.iUB)!Terminal.Set(V.Caller.Terminal)
+							V.uGlobal.uMatl(V.Local.iUB)!BOM.Set(V.Local.sBom)
+							V.uGlobal.uMatl(V.Local.iUB)!Parent.Set(V.Local.sBomLine(12).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Part.Set(V.Local.sBomLine(2).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Parent.Set(V.Local.sBomLine(12).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Sort.Set(V.Local.sBomLine(0).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Description.Set(V.Local.sBomLine(3).Trim)
+							V.uGlobal.uMatl(V.Local.iUB)!Quantity.Set(V.Local.sBomLine(6))
+							F.Intrinsic.String.Concat("Select Cost from ATG_3146_Matl_Snapshot where Month = ",V.Local.iMonth," and Year = ",V.Local.iYear," and Part = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+							F.ODBC.Connection!con.OpenRecordsetRO("rstA",V.Local.sSql)
+							F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+								V.uGlobal.uMatl(V.Local.iUB)!Cost1.Set(V.ODBC.con!rstA.FieldValFloat!COST)
+							F.Intrinsic.Control.Else
+								V.uGlobal.uMatl(V.Local.iUB)!Cost1.Set(0)
+							F.Intrinsic.Control.EndIf
+							F.ODBC.con!rstA.Close
+						F.Intrinsic.Control.EndIf
+						'Getting ending date cost
+						F.Intrinsic.Date.Month(V.Screen.SS_Form1!dtpEnd.Value,V.Local.iMonth)
+						F.Intrinsic.Date.Year(V.Screen.SS_Form1!dtpEnd.Value,V.Local.iYear)
+						F.Intrinsic.Control.If(V.Local.iMonth,=,V.Local.iChkMonth)
+							F.Intrinsic.Control.If(V.Local.iYear,=,V.Local.iChkYear)
+								V.Local.bChk.Set(True)
+							F.Intrinsic.Control.Else
+								V.Local.bChk.Set(False)
+							F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.Else
+							V.Local.bChk.Set(False)
+						F.Intrinsic.Control.EndIf
+						F.Intrinsic.Control.If(V.Local.bChk,=,True)
+							V.uGlobal.uMatl(V.Local.iUB)!Cost2.Set(V.ODBC.con!rst.FieldValFloat!COST)
+						F.Intrinsic.Control.Else
+							F.Intrinsic.String.Concat("Select Cost from ATG_3146_Matl_Snapshot where Month = ",V.Local.iMonth," and Year = ",V.Local.iYear," and Part = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+							F.ODBC.Connection!con.OpenRecordsetRO("rstA",V.Local.sSql)
+							F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+								V.uGlobal.uMatl(V.Local.iUB)!Cost2.Set(V.ODBC.con!rstA.FieldValFloat!COST)
+							F.Intrinsic.Control.Else
+								V.uGlobal.uMatl(V.Local.iUB)!Cost2.Set(0)
+							F.Intrinsic.Control.EndIf
+							F.ODBC.con!rstA.Close
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.EndIf
+					F.ODBC.con!rst.Close
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.If(V.Local.ia,=,7)
+					V.Local.sBom.Set(V.Local.sBomLine(2).Trim)
+					V.Local.sBomDesc.Set(V.Local.sBomLine(3).Trim)
+					F.Intrinsic.Control.If(V.uGlobal.uBom.UBound,=,-1)
+						V.uGlobal.uBom.Redim(0,0)
+					F.Intrinsic.Control.EndIf
+					F.Intrinsic.Math.Add(V.Local.iUB,1,V.Local.iUB)
+					V.uGlobal.uBom.RedimPreserve(V.uGlobal.uBom.LBound,V.Local.iUB)
+					V.uGlobal.uBom(V.Local.iUB)!Terminal.Set(V.Caller.Terminal)
+					V.uGlobal.uBom(V.Local.iUB)!Parent.Set(V.Local.sBom)
+					V.uGlobal.uBom(V.Local.iUB)!Description.Set(V.Local.sBomDesc)
+					V.uGlobal.uBom(V.Local.iUB)!Cost1.Set(0)
+					V.uGlobal.uBom(V.Local.iUB)!Cost2.Set(0)
+				F.Intrinsic.Control.EndIf
+				'Getting starting date cost
+				F.Intrinsic.Control.If(V.Local.ia,>,7)
+					F.Intrinsic.Date.Month(V.Screen.SS_Form1!dtpStart.Value,V.Local.iMonth)
+					F.Intrinsic.Date.Year(V.Screen.SS_Form1!dtpStart.Value,V.Local.iYear)
+					F.Intrinsic.Control.If(V.Local.iMonth,=,V.Local.iChkMonth)
+						F.Intrinsic.Control.If(V.Local.iYear,=,V.Local.iChkYear)
+							V.Local.bChk.Set(True)
+						F.Intrinsic.Control.Else
+							V.Local.bChk.Set(False)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Else
+						V.Local.bChk.Set(False)
+					F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.If(V.Local.bChk,=,True)
+						F.Intrinsic.String.Concat("Select COST from V_BOM_MSTR where PARENT = '",V.Local.sBomLine(12).Trim,"' and PART = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+						F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSql)
+						F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+							F.Intrinsic.Math.Add(V.uGlobal.uBom(V.Local.iUB)!Cost1,V.ODBC.con!rst.FieldValFloat!COST,V.uGlobal.uBom(V.Local.iUB)!Cost1)
+						F.Intrinsic.Control.EndIf
+						F.ODBC.con!rst.Close
+					F.Intrinsic.Control.Else
+						F.Intrinsic.String.Concat("Select Cost from ATG_3146_BOM_Snapshot where Month = ",V.Local.iMonth," and Year = ",V.Local.iYear," and Parent = '",V.Local.sBomLine(12).Trim,"' and Part = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+						F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSql)
+						F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+							F.Intrinsic.Math.Add(V.uGlobal.uBom(V.Local.iUB)!Cost1,V.ODBC.con!rst.FieldValFloat!Cost,V.uGlobal.uBom(V.Local.iUB)!Cost1)
+						F.Intrinsic.Control.EndIf
+						F.ODBC.con!rst.Close
+					F.Intrinsic.Control.EndIf
+					'Getting ending date cost
+					F.Intrinsic.Date.Month(V.Screen.SS_Form1!dtpEnd.Value,V.Local.iMonth)
+					F.Intrinsic.Date.Year(V.Screen.SS_Form1!dtpEnd.Value,V.Local.iYear)
+					F.Intrinsic.Control.If(V.Local.iMonth,=,V.Local.iChkMonth)
+						F.Intrinsic.Control.If(V.Local.iYear,=,V.Local.iChkYear)
+							V.Local.bChk.Set(True)
+						F.Intrinsic.Control.Else
+							V.Local.bChk.Set(False)
+						F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.Else
+						V.Local.bChk.Set(False)
+					F.Intrinsic.Control.EndIf
+					F.Intrinsic.Control.If(V.Local.bChk,=,True)
+						F.Intrinsic.String.Concat("Select COST from V_BOM_MSTR where PARENT = '",V.Local.sBomLine(12).Trim,"' and PART = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+						F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSql)
+						F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+							F.Intrinsic.Math.Add(V.uGlobal.uBom(V.Local.iUB)!Cost2,V.ODBC.con!rst.FieldValFloat!COST,V.uGlobal.uBom(V.Local.iUB)!Cost2)
+						F.Intrinsic.Control.EndIf
+						F.ODBC.con!rst.Close
+					F.Intrinsic.Control.Else
+						F.Intrinsic.String.Concat("Select Cost from ATG_3146_BOM_Snapshot where Month = ",V.Local.iMonth," and Year = ",V.Local.iYear," and Parent = '",V.Local.sBomLine(12).Trim,"' and Part = '",V.Local.sBomLine(2).Trim,"'",V.Local.sSql)
+						F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSql)
+						F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+							F.Intrinsic.Math.Add(V.uGlobal.uBom(V.Local.iUB)!Cost2,V.ODBC.con!rst.FieldValFloat!Cost,V.uGlobal.uBom(V.Local.iUB)!Cost2)
+						F.Intrinsic.Control.EndIf
+						F.ODBC.con!rst.Close
+					F.Intrinsic.Control.EndIf
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.ia)
+	F.Intrinsic.Control.Next(V.Local.i)
+	F.Intrinsic.Control.CallSub(Loadrst)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdprint_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_BOM-Material_Snapshot_Report.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+program.sub.cmdprint_click.end
+
+Program.Sub.Chk.Start
+F.Intrinsic.Control.SetErrorHandler("Chk_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.dSeldate.Declare(Date)
+V.Local.dCurDate.Declare(Date)
+
+V.Global.bChk.Set(True)
+F.Intrinsic.Date.EndOfMonth(V.Ambient.Date,V.Local.dCurDate)
+F.Intrinsic.Date.EndOfMonth(V.Screen.SS_Form1!dtpStart.Value,V.Local.dSeldate)
+F.Intrinsic.Control.If(V.Local.dSeldate,>,V.Local.dCurDate)
+	F.Intrinsic.UI.Msgbox("Selected starting month greater than current month!","Invalid Month")
+	Gui.SS_Form1.dtpStart.SetFocus
+	V.Global.bChk.Set(False)
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Else
+	F.Intrinsic.Date.EndOfMonth(V.Screen.SS_Form1!dtpEnd.Value,V.Local.dSeldate)
+	F.Intrinsic.Control.If(V.Local.dSeldate,>,V.Local.dCurDate)
+		F.Intrinsic.UI.Msgbox("Selected ending month greater than current month!","Invalid Month")
+		Gui.SS_Form1.dtpEnd.SetFocus
+		V.Global.bChk.Set(False)
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.Else
+		V.Global.bChk.Set(True)
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Chk_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_BOM-Material_Snapshot_Report.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.Chk.End
+
+Program.Sub.LoadJDBom.Start
+F.Intrinsic.Control.SetErrorHandler("LoadJDBom_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sSql.Declare(String)
+
+V.Local.sSql.Set("Select PART from INVENTORY_MST2 where NAME_VENDOR IN ('JOH001','ASV001')")
+F.ODBC.Connection!con.OpenRecordsetRO("rst",V.Local.sSql)
+F.Intrinsic.Control.If(V.ODBC.con!rst.EOF,=,False)
+	F.Intrinsic.Variable.LoadUDTFromRecordset("con","rst",V.uGlobal.uJDBom,False)
+	F.ODBC.con!rst.Close
+F.Intrinsic.Control.Else
+	V.uGlobal.uJDBom.Redim(-1,-1)
+	F.ODBC.con!rst.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("LoadJDBom_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_BOM-Material_Snapshot_Report.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.LoadJDBom.End
+
+Program.Sub.LoadRST.Start
+F.Intrinsic.Control.SetErrorHandler("LoadRST_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sSql.Declare(String)
+
+F.Intrinsic.Control.If(V.Screen.SS_Form1!ddlBOM.ListIndex,=,0)
+	F.Intrinsic.String.Concat("Delete ATG_3146_BI_Matl_Snapshot where Terminal = '",V.Caller.Terminal,"'",V.Local.sSql)
+	F.ODBC.Connection!con.Execute(V.Local.sSql)
+	F.Intrinsic.Control.If(V.uGlobal.uMatl.UBound,>,-1)
+		V.Local.sSql.Set("Select * from ATG_3146_BI_Matl_Snapshot")
+		F.ODBC.Connection!con.OpenRecordsetRW("rst",V.Local.sSql)
+		F.Intrinsic.Variable.SaveUDTToRecordset("con","rst","V.uGlobal.uMatl")
+		F.ODBC.con!rst.Close
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Concat("Delete ATG_3146_BI_BOM_Snapshot where Terminal = '",V.Caller.Terminal,"'",V.Local.sSql)
+	F.ODBC.Connection!con.Execute(V.Local.sSql)
+	F.Intrinsic.Control.If(V.uGlobal.uBom.UBound,>,-1)
+		V.Local.sSql.Set("Select * from ATG_BI_BOM_Snapshot")
+		F.ODBC.Connection!con.OpenRecordsetRW("rst",V.Local.sSql)
+		F.Intrinsic.Variable.SaveUDTToRecordset("con","rst","V.uGlobal.uBom")
+		F.ODBC.con!rst.Close
+	F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.CallSub(Callbi)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("LoadRST_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_BOM-Material_Snapshot_Report.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.LoadRST.End
+
+Program.Sub.CallBI.Start
+F.Intrinsic.Control.SetErrorHandler("CallBI_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sParam.Declare(String)
+V.Local.sParamVal.Declare(String)
+V.Local.iBI.Declare(Long)
+V.Local.iStartMonth.Declare(Long)
+V.Local.iStartYear.Declare(Long)
+V.Local.iEndMonth.Declare(Long)
+V.Local.iEndYear.Declare(Long)
+V.Local.sStart.Declare(String)
+V.Local.sEnd.Declare(String)
+
+F.Intrinsic.Date.Month(V.Screen.SS_Form1!dtpStart.Value,V.Local.iStartMonth)
+F.Intrinsic.Date.Year(V.Screen.SS_Form1!dtpStart.Value,V.Local.iStartYear)
+F.Intrinsic.Date.Month(V.Screen.SS_Form1!dtpEnd.Value,V.Local.iEndMonth)
+F.Intrinsic.Date.Year(V.Screen.SS_Form1!dtpEnd.Value,V.Local.iEndYear)
+F.Intrinsic.String.Concat(V.Local.iStartMonth,"/",V.Local.iStartYear,V.Local.sStart)
+F.Intrinsic.String.Concat(V.Local.iEndMonth,"/",V.Local.iEndYear,V.Local.sEnd)
+V.Local.sParam.Set("Terminal*!*StartPeriod*!*StopPeriod")
+F.Intrinsic.String.Concat(V.Caller.Terminal,"*!*",V.Local.sStart,"*!*",V.Local.sEnd,V.Local.sParamVal)
+F.Intrinsic.String.Split(V.Local.sParam,"*!*",V.Local.sParam)
+F.Intrinsic.String.Split(V.Local.sParamVal,"*!*",V.Local.sParamVal)
+F.Intrinsic.Control.If(V.Screen.SS_Form1!ddlBOM.ListIndex,=,0)
+	F.Global.BI.GetIDFromName("ATG_BI_Matl_Snapshot.rpt",V.Local.iBI)
+	F.Global.BI.PrintReport(V.Local.iBI,0,V.Local.sParam,V.Local.sParamVal,"",False)
+F.Intrinsic.Control.Else
+	F.Global.BI.GetIDFromName("ATG_BI_BOM_Snapshot.rpt",V.Local.iBI)
+	F.Global.BI.PrintReport(V.Local.iBI,0,V.Local.sParam,V.Local.sParamVal,"",False)
+F.Intrinsic.Control.EndIf
+F.Intrinsic.Control.CallSub(Ss_form1_unload)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("CallBI_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: ATG_BOM-Material_Snapshot_Report.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+Function.Intrinsic.Control.EndIf
+
+Program.Sub.CallBI.End
+
+Program.Sub.ScreenSS.Start
+SS_Form1{{CAPTION::BOM Material Reprice
+SS_Form1.CTRL{{NAME::dtpStart\\TYPE::6\\CAPTION::Starting Date\\GROUP::1\\BROWSER::0
+SS_Form1.CTRL{{NAME::dtpEnd\\TYPE::6\\CAPTION::Ending Date\\GROUP::1\\BROWSER::0
+SS_Form1.CTRL{{NAME::ddlBOM\\TYPE::4\\CAPTION::Select Option\\GROUP::-1\\BROWSER::0
+SS_Form1.CTRL{{NAME::cmdPrint\\TYPE::5\\CAPTION::Print\\GROUP::-1\\BROWSER::0
+
+Program.Sub.ScreenSS.End
+
